@@ -1,0 +1,22 @@
+# Core dependencies
+pyyaml
+python-dotenv
+
+# Documentation tools (MkDocs + Sphinx)
+mkdocs
+mkdocs-material
+sphinx
+sphinx_rtd_theme
+recommonmark
+
+# Optional: if you plan to auto-generate Python API docs
+sphinx-autodoc-typehints
+
+# Optional: MkDocs extensions
+mkdocs-mermaid2-plugin
+mkdocs-git-revision-date-localized-plugin
+
+# CI/CD and linting utilities (optional but good practice)
+black
+flake8
+pytest

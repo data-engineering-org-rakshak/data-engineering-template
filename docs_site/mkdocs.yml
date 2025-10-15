@@ -1,0 +1,7 @@
+site_name: Data Engineering Template
+nav:
+  - Home: index.md
+  - Batch Project: template_batch_project.md
+  - Streaming Project: template_streaming_project.md
+  - ML Project: template_ml_project.md
+theme: readthedocs
