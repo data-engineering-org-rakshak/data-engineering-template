@@ -1,0 +1,21 @@
+name: Branch Policy Check
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - "feature/*"
+      - "hotfix/*"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch name pattern
+        run: |
+          BRANCH=$(echo "${GITHUB_REF#refs/heads/}")
+          if [[ ! "$BRANCH" =~ ^(main|develop|feature\/.+|hotfix\/.+)$ ]]; then
+            echo "❌ Invalid branch name: $BRANCH"
+            exit 1
+          fi
+          echo "✅ Branch name valid: $BRANCH"
