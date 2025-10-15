@@ -1,0 +1,8 @@
+database:
+  host: staging-db.example.com
+  port: 5432
+  user: staging_user
+  password: ${DB_PASSWORD}
+
+storage:
+  bucket: de-staging-bucket

@@ -1,0 +1,8 @@
+database:
+  host: prod-db.example.com
+  port: 5432
+  user: prod_user
+  password: ${DB_PASSWORD}
+
+storage:
+  bucket: de-prod-bucket
