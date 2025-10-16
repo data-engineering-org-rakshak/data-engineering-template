@@ -1,0 +1,10 @@
+# Assign specific reviewers automatically based on file paths
+
+# Backend code owned by data team
+src/data_ingestion/* @rakshak-soni @data-team
+
+# Documentation owned by docs team
+docs/* @rakshak-soni @docs-team
+
+# CI/CD workflows owned by devops team
+.github/workflows/* @devops-team
