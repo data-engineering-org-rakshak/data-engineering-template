@@ -38,3 +38,28 @@ jobs:
       - name: 🧪 Run integration tests
         run: |
           pytest tests/integration --maxfail=1 --disable-warnings -q
+
+      - name: Generate test reports
+        if: always()
+        run: |
+            mkdir -p reports
+            pytest --junitxml=reports/test-results.xml || true
+            bandit -r . -f json -o reports/bandit-report.json || true
+            black --check . > reports/black-report.txt || true
+            echo "✅ Reports generated in the 'reports' folder."
+
+      - name: Upload reports as workflow artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+            name: ci-reports
+            path: reports/
+
+      - name: Add summary to GitHub Actions UI
+        if: always()
+        run: |
+            echo "### ✅ CI Summary Report" >> $GITHUB_STEP_SUMMARY
+            echo "- 🧪 Tests executed via pytest" >> $GITHUB_STEP_SUMMARY
+            echo "- 🔍 Security scan: Bandit" >> $GITHUB_STEP_SUMMARY
+            echo "- 🎨 Code format check: Black" >> $GITHUB_STEP_SUMMARY
+            echo "- 📂 Reports uploaded as artifacts" >> $GITHUB_STEP_SUMMARY
