@@ -1,3 +1,6 @@
+# nosec B101
+
+
 import os
 import pandas as pd
 

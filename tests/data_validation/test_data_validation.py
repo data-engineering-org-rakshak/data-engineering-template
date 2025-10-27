@@ -1,3 +1,6 @@
+# nosec B101
+
+
 import pandas as pd
 import pytest
 
