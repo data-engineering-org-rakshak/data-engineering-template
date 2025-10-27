@@ -1,22 +1,29 @@
+import pandas as pd
 import pytest
 
-# ✅ Sample data validation test
-def test_data_quality_checks():
-    # Example simulated data
-    data = [10, 20, 30, 40, 50]
+@pytest.fixture
+def load_sample_data():
+    """Load sample data for validation tests."""
+    return pd.read_csv("tests/data_validation/sample_data.csv")
 
-    # Check that data is not empty
-    assert len(data) > 0, "Data should not be empty"
+def test_no_missing_values(load_sample_data):
+    """Ensure there are no missing/null values."""
+    df = load_sample_data
+    assert not df.isnull().values.any(), "❌ Data contains missing values!"
 
-    # Check that all values are positive
-    assert all(x > 0 for x in data), "All values should be positive"
+def test_no_duplicates(load_sample_data):
+    """Ensure there are no duplicate rows."""
+    df = load_sample_data
+    duplicate_count = df.duplicated().sum()
+    assert duplicate_count == 0, f"❌ Found {duplicate_count} duplicate rows!"
 
-    # Check that data length matches expected count
-    expected_count = 5
-    assert len(data) == expected_count, f"Expected {expected_count} rows, got {len(data)}"
+def test_expected_columns(load_sample_data):
+    """Ensure dataset has correct columns."""
+    df = load_sample_data
+    expected_columns = {"id", "name", "age", "city"}
+    assert set(df.columns) == expected_columns, "❌ Schema mismatch in columns!"
 
-# ✅ Add another example test
-def test_no_null_values():
-    # Example data with no None/null values
-    data = [1, 2, 3, 4, 5]
-    assert None not in data, "Data contains null values"
+def test_data_types(load_sample_data):
+    """Ensure correct data types (age should be numeric)."""
+    df = load_sample_data
+    assert pd.api.types.is_numeric_dtype(df["age"]), "❌ Age column should be numeric!"
