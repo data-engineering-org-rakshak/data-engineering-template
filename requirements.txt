@@ -20,3 +20,6 @@ mkdocs-git-revision-date-localized-plugin
 black
 flake8
 pytest
+
+# Data cleaning
+pandas
