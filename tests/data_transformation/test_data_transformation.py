@@ -16,7 +16,7 @@ def test_remove_duplicates():
     df = pd.DataFrame(data)
     transformed_df = transform_data(df)
     # Expect only one row after removing duplicates
-    assert len(transformed_df) == 1
+    assert len(transformed_df) == 1  # nosec B101
 
 
 def test_total_column_created():
@@ -24,5 +24,5 @@ def test_total_column_created():
     df = pd.DataFrame(data)
     transformed_df = transform_data(df)
     # Check if total column exists and is correct
-    assert "total" in transformed_df.columns
-    assert transformed_df["total"].tolist() == [20, 60]
+    assert "total" in transformed_df.columns  # nosec B101
+    assert transformed_df["total"].tolist() == [20, 60]  # nosec B101

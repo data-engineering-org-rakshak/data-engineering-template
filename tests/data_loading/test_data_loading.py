@@ -19,9 +19,11 @@ def test_data_is_saved_correctly(tmp_path):
     load_data_to_csv(df, file_path)
 
     # Assert
-    assert os.path.exists(file_path), "CSV file not created"
+    assert os.path.exists(file_path), "CSV file not created"  # nosec B101
     loaded_df = pd.read_csv(file_path)
-    assert loaded_df.equals(df), "Loaded data does not match original data"
+    assert loaded_df.equals(
+        df
+    ), "Loaded data does not match original data"  # nosec B101
 
     # ✅ Save a permanent copy for artifacts
     os.makedirs("output", exist_ok=True)
