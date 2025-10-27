@@ -1,0 +1,33 @@
+name: 🧹 Code Quality Checks
+
+on:
+  push:
+    branches: [main, feature/*]
+  pull_request:
+    branches: [main]
+
+jobs:
+  code-quality:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: |
+          pip install flake8 black bandit
+
+      - name: Run flake8 (Style Check)
+        run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+      - name: Run black (Format Check)
+        run: black --check .
+
+      - name: Run bandit (Security Scan)
+        run: bandit -r .

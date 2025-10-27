@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 import yaml
 
+
 def load_config(env="dev"):
     # Load .env file
     dotenv_path = f"config/{env}/.env"
@@ -18,6 +19,7 @@ def load_config(env="dev"):
             cfg["database"][key] = os.getenv(var_name)
 
     return cfg
+
 
 # Example usage
 config = load_config("dev")
