@@ -1,47 +1,52 @@
 name: Infrastructure as Code (IaC)
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:  # allows manual trigger from the Actions tab
+  push:
+    branches:
+      - main
+      - dev
 
 jobs:
   terraform:
     runs-on: ubuntu-latest
 
+    env:
+      AWS_DEFAULT_REGION: us-east-1  # change if you use a different region
+
     steps:
-      - name: Checkout repo
+      # Step 1: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-
-      - name: Determine environment
-        id: env
+      # Step 2: Detect branch and choose credentials
+      - name: Set environment
+        id: set-env
         run: |
           if [[ "${GITHUB_REF##*/}" == "main" ]]; then
-            echo "ENV=PROD" >> $GITHUB_OUTPUT
-          else
-            echo "ENV=DEV" >> $GITHUB_OUTPUT
-          fi
-          echo "Environment set to ${{ steps.env.outputs.ENV }}"
-
-      - name: Set AWS Credentials
-        id: creds
-        run: |
-          if [[ "${{ steps.env.outputs.ENV }}" == "PROD" ]]; then
-            echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID_PROD }}" >> $GITHUB_ENV
-            echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}" >> $GITHUB_ENV
+            echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID_MAIN }}" >> $GITHUB_ENV
+            echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY_MAIN }}" >> $GITHUB_ENV
+            echo "ENVIRONMENT=main" >> $GITHUB_ENV
           else
             echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID_DEV }}" >> $GITHUB_ENV
             echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}" >> $GITHUB_ENV
+            echo "ENVIRONMENT=dev" >> $GITHUB_ENV
           fi
-          echo "AWS_DEFAULT_REGION=us-east-1" >> $GITHUB_ENV
+          echo "✅ Environment set to $ENVIRONMENT"
 
+      # Step 3: Setup Terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      # Step 4: Terraform Init
       - name: Terraform Init
         run: terraform -chdir=infra/dev init
 
+      # Step 5: Terraform Plan
       - name: Terraform Plan
         run: terraform -chdir=infra/dev plan
 
+      # Step 6: Terraform Apply (only for dev or main)
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
         run: terraform -chdir=infra/dev apply -auto-approve
