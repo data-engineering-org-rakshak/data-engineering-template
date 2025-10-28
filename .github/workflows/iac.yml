@@ -1,0 +1,34 @@
+name: 🏗️ Infrastructure as Code (IaC)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - staging
+      - dev
+    paths:
+      - 'infra/**'
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🧩 Checkout repo
+        uses: actions/checkout@v4
+
+      - name: 🧰 Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+
+      - name: 🔍 Terraform Init
+        run: terraform -chdir=infra/${{ github.ref_name }} init
+
+      - name: 🧾 Terraform Plan
+        run: terraform -chdir=infra/${{ github.ref_name }} plan
+
+      - name: 🚀 Terraform Apply
+        if: github.ref == 'refs/heads/main'  # only auto-apply on main
+        run: terraform -chdir=infra/${{ github.ref_name }} apply -auto-approve
