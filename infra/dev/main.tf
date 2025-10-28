@@ -1,39 +1,101 @@
-terraform {
-  required_version = ">= 1.6.0"
+####################################################
+# Terraform: Infrastructure as Code (IaC)
+# Environment: dev
+# Author: Rocky 🚀
+####################################################
 
-  backend "s3" {
-    bucket = "rocky-iac-demo-7cf7b635"
-    key    = "env:/terraform.tfstate"
-    region = "us-east-1"
-  }
+terraform {
+  required_version = ">= 1.5.0"
 
   required_providers {
     aws = {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
+  }
+
+  # (Optional) Remote backend example
+  # Uncomment and update if you want to store state in S3
+  #
+  # backend "s3" {
+  #   bucket = "rocky-terraform-state"
+  #   key    = "dev/terraform.tfstate"
+  #   region = "us-east-1"
+  # }
+}
+
+####################################################
+# AWS Provider Configuration
+####################################################
+
+provider "aws" {
+  region = var.aws_region
+}
+
+####################################################
+# Variables
+####################################################
+
+variable "aws_region" {
+  description = "AWS region for resources"
+  type        = string
+  default     = "us-east-1"
+}
+
+variable "bucket_prefix" {
+  description = "Prefix for S3 bucket name"
+  type        = string
+  default     = "rocky-iac-demo"
+}
+
+####################################################
+# Random ID to avoid bucket name collisions
+####################################################
+
+resource "random_id" "suffix" {
+  byte_length = 4
+}
+
+####################################################
+# S3 Bucket Resource
+####################################################
+
+resource "aws_s3_bucket" "iac_bucket" {
+  bucket = "${var.bucket_prefix}-${random_id.suffix.hex}"
+
+  tags = {
+    Name        = "Rocky IaC S3 Bucket"
+    Environment = "dev"
+    ManagedBy   = "Terraform"
   }
 }
 
-module "s3_bucket" {
-  source = "../modules/s3_bucket"
+####################################################
+# S3 Bucket Versioning (optional)
+####################################################
 
-  bucket_prefix = var.bucket_prefix
-  environment   = var.environment
-  aws_region    = var.aws_region
+resource "aws_s3_bucket_versioning" "iac_versioning" {
+  bucket = aws_s3_bucket.iac_bucket.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
 }
 
-module "iam_roles" {
-  source = "../modules/iam_roles"
+####################################################
+# Outputs
+####################################################
 
-  environment = var.environment
-  aws_region  = var.aws_region
+output "bucket_name" {
+  description = "Name of the created S3 bucket"
+  value       = aws_s3_bucket.iac_bucket.bucket
 }
 
-output "s3_bucket_name" {
-  value = module.s3_bucket.bucket_name
-}
-
-output "iam_role_name" {
-  value = module.iam_roles.role_name
+output "bucket_arn" {
+  description = "ARN of the created S3 bucket"
+  value       = aws_s3_bucket.iac_bucket.arn
 }

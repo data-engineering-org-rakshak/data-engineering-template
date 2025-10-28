@@ -1,32 +1,49 @@
-name: Infrastructure Provisioning
+name: Infrastructure as Code (IaC)
 
 on:
+  # Allows manual trigger from GitHub Actions UI
   workflow_dispatch:
+
+  # Optional: also run automatically on push to main or dev
   push:
     branches:
+      - main
       - dev
 
 jobs:
   terraform:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: infra/dev
 
     steps:
-      - name: Checkout code
+      # Step 1: Checkout your repository
+      - name: Checkout repo
         uses: actions/checkout@v4
 
+      # Step 2: Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.6.0
 
+      # Step 3: Terraform Init
       - name: Terraform Init
-        run: terraform init -reconfigure
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1   # change if needed
+        run: terraform -chdir=infra/dev init
 
-      - name: Terraform Validate
-        run: terraform validate
-
+      # Step 4: Terraform Plan
       - name: Terraform Plan
-        run: terraform plan
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+        run: terraform -chdir=infra/dev plan
+
+      # Step 5: Terraform Apply (only runs on main or dev)
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+        run: terraform -chdir=infra/dev apply -auto-approve
