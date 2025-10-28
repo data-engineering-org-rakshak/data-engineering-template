@@ -63,3 +63,4 @@ jobs:
             echo "- 🔍 Security scan: Bandit" >> $GITHUB_STEP_SUMMARY
             echo "- 🎨 Code format check: Black" >> $GITHUB_STEP_SUMMARY
             echo "- 📂 Reports uploaded as artifacts" >> $GITHUB_STEP_SUMMARY
+

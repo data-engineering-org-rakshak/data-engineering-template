@@ -1,0 +1,34 @@
+name: 🚀 Deploy Pipeline
+
+on:
+  push:
+    branches:
+      - main       # For production
+      - staging    # For staging
+      - dev        # For development
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        environment: [dev, staging, prod]
+
+    steps:
+      - name: 🧩 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 📦 Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: 🚀 Deploy to ${{ matrix.environment }}
+        run: |
+          echo "Starting deployment for ${{ matrix.environment }}"
+          python scripts/deploy_${{ matrix.environment }}.py
