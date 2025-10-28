@@ -9,9 +9,21 @@ provider "aws" {
   region = var.aws_region
 }
 
-variable "aws_region" { default = "us-east-1" }
-variable "environment" { default = "staging" }
-variable "bucket_prefix" { default = "rocky-iac-demo" }
+variable "aws_region" {
+  type = string
+  default = "us-west-2"
+}
+
+variable "environment" {
+  type = string
+  default = "staging"
+}
+
+variable "bucket_prefix" {
+  type = string
+  default = "dataeng-iac-bucket"
+}
+
 
 resource "random_id" "suffix" { byte_length = 4 }
 
