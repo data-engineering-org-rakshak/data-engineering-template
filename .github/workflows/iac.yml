@@ -26,5 +26,5 @@ jobs:
         run: terraform -chdir=infra/dev plan
 
       - name: Terraform Apply
-        if: github.ref == 'refs/heads/dev'
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
         run: terraform -chdir=infra/dev apply -auto-approve
