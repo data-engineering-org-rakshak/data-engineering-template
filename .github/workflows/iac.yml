@@ -1,49 +1,66 @@
 name: Infrastructure as Code (IaC)
 
 on:
-  # Allows manual trigger from GitHub Actions UI
   workflow_dispatch:
-
-  # Optional: also run automatically on push to main or dev
+    inputs:
+      environment:
+        description: 'Environment to deploy (dev/staging/prod)'
+        required: true
+        default: dev
   push:
     branches:
-      - main
       - dev
+      - staging
+      - main
 
 jobs:
   terraform:
     runs-on: ubuntu-latest
-
     steps:
-      # Step 1: Checkout your repository
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # Step 2: Setup Terraform
+      - name: Set environment
+        id: env
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "ENV=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+          else
+            # branch mapping
+            BRANCH=${GITHUB_REF#refs/heads/}
+            if [ "$BRANCH" = "main" ]; then echo "ENV=prod" >> $GITHUB_OUTPUT
+            else echo "ENV=$BRANCH" >> $GITHUB_OUTPUT
+            fi
+          fi
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
 
-      # Step 3: Terraform Init
+      - name: Configure AWS creds
+        run: |
+          echo "Using environment: ${{ steps.env.outputs.ENV }}"
+        env:
+          ENV: ${{ steps.env.outputs.ENV }}
+
       - name: Terraform Init
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: us-east-1   # change if needed
-        run: terraform -chdir=infra/dev init
+          AWS_ACCESS_KEY_ID: ${{ secrets['AWS_ACCESS_KEY_ID_' + steps.env.outputs.ENV | upper ] }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets['AWS_SECRET_ACCESS_KEY_' + steps.env.outputs.ENV | upper ] }}
+          AWS_DEFAULT_REGION: us-east-1
+        run: terraform -chdir=infra/${{ steps.env.outputs.ENV }} init
 
-      # Step 4: Terraform Plan
       - name: Terraform Plan
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets['AWS_ACCESS_KEY_ID_' + steps.env.outputs.ENV | upper ] }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets['AWS_SECRET_ACCESS_KEY_' + steps.env.outputs.ENV | upper ] }}
           AWS_DEFAULT_REGION: us-east-1
-        run: terraform -chdir=infra/dev plan
+        run: terraform -chdir=infra/${{ steps.env.outputs.ENV }} plan -out=tfplan
 
-      # Step 5: Terraform Apply (only runs on main or dev)
-      - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
+      - name: Terraform Apply (auto on dev; require manual for prod)
+        if: steps.env.outputs.ENV == 'dev' || github.event_name == 'workflow_dispatch'
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets['AWS_ACCESS_KEY_ID_' + steps.env.outputs.ENV | upper ] }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets['AWS_SECRET_ACCESS_KEY_' + steps.env.outputs.ENV | upper ] }}
           AWS_DEFAULT_REGION: us-east-1
-        run: terraform -chdir=infra/dev apply -auto-approve
+        run: terraform -chdir=infra/${{ steps.env.outputs.ENV }} apply -auto-approve tfplan
