@@ -1,52 +1,32 @@
-name: Infrastructure as Code (IaC)
+name: Infrastructure Provisioning
 
 on:
-  workflow_dispatch:  # allows manual trigger from the Actions tab
+  workflow_dispatch:
   push:
     branches:
-      - main
       - dev
 
 jobs:
   terraform:
     runs-on: ubuntu-latest
-
-    env:
-      AWS_DEFAULT_REGION: us-east-1  # change if you use a different region
+    defaults:
+      run:
+        working-directory: infra/dev
 
     steps:
-      # Step 1: Checkout repo
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      # Step 2: Detect branch and choose credentials
-      - name: Set environment
-        id: set-env
-        run: |
-          if [[ "${GITHUB_REF##*/}" == "main" ]]; then
-            echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID_MAIN }}" >> $GITHUB_ENV
-            echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY_MAIN }}" >> $GITHUB_ENV
-            echo "ENVIRONMENT=main" >> $GITHUB_ENV
-          else
-            echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID_DEV }}" >> $GITHUB_ENV
-            echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}" >> $GITHUB_ENV
-            echo "ENVIRONMENT=dev" >> $GITHUB_ENV
-          fi
-          echo "✅ Environment set to $ENVIRONMENT"
-
-      # Step 3: Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
 
-      # Step 4: Terraform Init
       - name: Terraform Init
-        run: terraform -chdir=infra/dev init
+        run: terraform init -reconfigure
 
-      # Step 5: Terraform Plan
+      - name: Terraform Validate
+        run: terraform validate
+
       - name: Terraform Plan
-        run: terraform -chdir=infra/dev plan
-
-      # Step 6: Terraform Apply (only for dev or main)
-      - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
-        run: terraform -chdir=infra/dev apply -auto-approve
+        run: terraform plan
