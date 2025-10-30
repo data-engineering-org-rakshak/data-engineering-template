@@ -1,0 +1,35 @@
+name: Infrastructure as Code (IaC)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: us-east-1
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform -chdir=infra/dev init
+
+      - name: Terraform Plan
+        run: terraform -chdir=infra/dev plan -out=tfplan.out
+      
+      - name: Validate backend resources
+        run: |
+          aws s3api head-bucket --bucket rocky-terraform-state-bucket
+          aws dynamodb describe-table --table-name terraform-locks
+
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+        run: terraform -chdir=infra/dev apply -auto-approve tfplan.out
